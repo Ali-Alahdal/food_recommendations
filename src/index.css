@@ -2,9 +2,10 @@
 
 :root {
 
+  height: 100vh;
 
   --charcoal: #1D3557;
-  --cream: #F1FAEE;
+  --cream-white: #fbf5e5;
   --tomato: #E63946;
   --warm-yellow: #FFB703;
   --soft-brown: #9C6644;

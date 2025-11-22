@@ -1,6 +1,6 @@
 function Header() {
     return (
-        <header className=" bg-(--charcoal) p-4 flex justify-between text-(--cream)">
+        <header className=" bg-(--charcoal) p-4 flex justify-between text-(--cream-white)">
 
             <div>
                 <h1 className="text-xl font-bold   ">Food Recommendation System</h1>  
