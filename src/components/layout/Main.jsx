@@ -1,83 +1,119 @@
-import { useState } from "react";
-import QuestionComponent from "../content/QuestionComponent";
-import LoadingComponent from "../animated_components/LoadingComponent";
-import ResultsComponent from "../content/ResultsComponent";
+
+import React, { useState } from "react";
+import { recommendMeals } from "../../urils/Recommender";
 function Main() {
-    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-    const [answers, setAnswers] = useState([]);
+ const [calories, setCalories] = useState(500);
+  const [protein, setProtein] = useState(30);
+  const [fat, setFat] = useState(20);
+  const [carbs, setCarbs] = useState(50);
+  const [cuisine, setCuisine] = useState("Turkish");
+  const [category, setCategory] = useState("Breakfast");
+  const [results, setResults] = useState([]);
 
-    const [isloading, setIsloading] = useState(false);
+  const handleRecommend = () => {
+    const userInput = {
+      // keys must match your meta.numFeatures names exactly
+      Calories: calories,
+      FatContent: fat,
+      SaturatedFatContent: 5,
+      "CholesterolContent(mg)": 100,
+      SodiumContent: 400,
+      CarbohydrateContent: carbs,
+      FiberContent: 5,
+      SugarContent: 5,
+      ProteinContent: protein,
+      RecipeServings: 1,
 
+      Cuisine: cuisine,
+      Category: category,
+    };
 
-    const [pageState, setPageState] = useState("results"); 
+    const recs = recommendMeals(userInput, 5);
+    setResults(recs);
+  };
 
-    const [results, setResults] = useState({
-        breakfast: [
-            {
-                name: "Pancakes",
-                image: "https://example.com/pancakes.jpg"
-            }
-        ],
-        lunch: [
-            {
-                name: "Caesar Salad",
-                image: "https://example.com/caesar_salad.jpg"
-            }
-        ], 
-        dinner: [
-            {
-                name: "Grilled Salmon",
-                image: "https://example.com/grilled_salmon.jpg"
-            }
-        ]
-    });
+  return (
+    <div>
+      <h2>Meal Recommender</h2>
 
-    const questions = [
-        {
-            question: "What is your favorite cuisine?",
-            answers: ["Italian", "Chinese", "Mexican", "Indian"]
-        },
-        {
-            question: "What is your preferred meal type?",
-            answers: ["Breakfast", "Lunch", "Dinner", "Snack"]
-        },
-        {
-            question: "Do you have any dietary restrictions?",
-            answers: ["Vegetarian", "Vegan", "Gluten-Free", "None"]
-        },
-        {
-            question: "What is your favorite flavor profile?",
-            answers: ["Spicy", "Sweet", "Savory", "Sour"]
-        }
-    ]
+      <div>
+        <label>
+          Calories:
+          <input
+            type="number"
+            value={calories}
+            onChange={(e) => setCalories(Number(e.target.value))}
+          />
+        </label>
+      </div>
 
+      <div>
+        <label>
+          Protein (g):
+          <input
+            type="number"
+            value={protein}
+            onChange={(e) => setProtein(Number(e.target.value))}
+          />
+        </label>
+      </div>
 
-    const addAnswerHandler = (answer) => {
-        
-        if(currentQuestionIndex < questions.length - 1){
-            setAnswers([...answers, answer]);
-            setCurrentQuestionIndex(currentQuestionIndex + 1);
-            console.log(answers);
-        }else{
-            setAnswers([...answers, answer]);
-            setIsloading(true);
-            setPageState("loading");
-            console.log(answers);
+      <div>
+        <label>
+          Carbs (g):
+          <input
+            type="number"
+            value={carbs}
+            onChange={(e) => setCarbs(Number(e.target.value))}
+          />
+        </label>
+      </div>
 
-        }
-       
-    }
-    return ( 
-       <main className=" bg-(--cream-white) h-full ">
+      <div>
+        <label>
+          Fat (g):
+          <input
+            type="number"
+            value={fat}
+            onChange={(e) => setFat(Number(e.target.value))}
+          />
+        </label>
+      </div>
 
-            {pageState === "questions" && <QuestionComponent question={questions[currentQuestionIndex]} addAnswer={addAnswerHandler} /> } 
+      <div>
+        <label>
+          Cuisine:
+          <select value={cuisine} onChange={(e) => setCuisine(e.target.value)}>
+            <option value="Turkish">Turkish</option>
+            <option value="Arabic">Arabic</option>
+            <option value="Italian">Italian</option>
+            {/* you can generate from meta.cuisines too */}
+          </select>
+        </label>
+      </div>
 
-            {pageState === "loading" && <LoadingComponent />  }
+      <div>
+        <label>
+          Category:
+          <select value={category} onChange={(e) => setCategory(e.target.value)}>
+            <option value="Breakfast">Breakfast</option>
+            <option value="Lunch">Lunch</option>
+            <option value="Dinner">Dinner</option>
+          </select>
+        </label>
+      </div>
 
-            {pageState === "results" && <ResultsComponent results={results} />  }
-            
-       </main>
-     );
+      <button onClick={handleRecommend}>Recommend</button>
+
+      <ul>
+        {results.map((meal) => (
+          <li key={meal.id}>
+            #{meal.id} – {meal.name} ({meal.cuisine}, {meal.category})
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 export default Main;
