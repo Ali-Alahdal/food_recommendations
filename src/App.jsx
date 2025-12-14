@@ -11,19 +11,16 @@ function App() {
   const [userData , setUserData] = useState(null);
   const [foodData , setFoodData] = useState(null);
   return (
-    <>
-      <div className='h-screen'>
-        <Header />
-        <FoodContext.Provider value={{foodData , setFoodData}}>
-        <UserContext.Provider value={{userData , setUserData}}>
-        
-          <Main />
-        </UserContext.Provider>
-         </FoodContext.Provider>
-
-      </div>
+    <div className="page-shell flex flex-col gap-6">
+      <Header />
+      <FoodContext.Provider value={{foodData , setFoodData}}>
+      <UserContext.Provider value={{userData , setUserData}}>
       
-    </>
+        <Main />
+      </UserContext.Provider>
+       </FoodContext.Provider>
+
+    </div>
   )
 }
 

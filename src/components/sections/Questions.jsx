@@ -1,8 +1,19 @@
 import React, { useState, useContext, useMemo } from "react";
 import { UserContext } from "../../utils/Context/UserContext";
 
-
-
+const CUISINES = [
+    "American",
+    "Arabic",
+    "Chinese",
+    "French",
+    "Greek",
+    "Indian",
+    "Italian",
+    "Japanese",
+    "Mexican",
+    "Spanish",
+    "Turkish"
+];
 
 const ACTIVITY = {
     sedentary: 1.2,        // little/no exercise
@@ -38,6 +49,7 @@ function Questions() {
     const [goal, setGoal] = useState("maintain");
     // kcal adjustment: typical ranges: lose -300..-700, gain +200..+500
     const [kcalAdjust, setKcalAdjust] = useState(0);
+    const [preferredCuisine, setPreferredCuisine] = useState("Turkish");
 
     // protein & fat rules (simple)
     // protein g/kg: 1.6 good default (training) / 1.2 non-training
@@ -53,32 +65,46 @@ function Questions() {
         const bmr = bmrMifflin({ sex, weightKg, heightCm, age });
         const maintenanceCalories = bmr * (ACTIVITY[activity] ?? 1.2);
 
-        let targetCalories = maintenanceCalories + kcalAdjust;
-        // optional: if user chooses goal, you can auto adjust:
-        // if (goal === "lose") targetCalories = maintenanceCalories - 500;
-        // if (goal === "gain") targetCalories = maintenanceCalories + 300;
+                // Adjust calories and macros based on goal
+                let targetCalories = maintenanceCalories;
+                let proteinG = Math.round(weightKg * proteinPerKg);
+                let fatP = fatPercent;
 
-        targetCalories = Math.round(targetCalories);
+                if (goal === "lose") {
+                    targetCalories = maintenanceCalories - 500;
+                    proteinG = Math.round(weightKg * 2.0); // higher protein for weight loss
+                    fatP = 0.22;
+                } else if (goal === "gain") {
+                    targetCalories = maintenanceCalories + 300;
+                    proteinG = Math.round(weightKg * 1.7);
+                    fatP = 0.28;
+                } else if (goal === "build") {
+                    targetCalories = maintenanceCalories + 200;
+                    proteinG = Math.round(weightKg * 2.2); // highest protein for muscle gain
+                    fatP = 0.25;
+                } else {
+                    // maintain
+                    targetCalories = maintenanceCalories;
+                    proteinG = Math.round(weightKg * proteinPerKg);
+                    fatP = fatPercent;
+                }
 
-        // macros
-        const proteinG = Math.round(weightKg * proteinPerKg);
-        const proteinCals = proteinG * 4;
+                targetCalories = Math.round(targetCalories);
+                const proteinCals = proteinG * 4;
+                const fatCals = Math.round(targetCalories * clamp(fatP, 0.15, 0.40));
+                const fatG = Math.round(fatCals / 9);
+                const remainingCals = targetCalories - (proteinCals + fatCals);
+                const carbsG = Math.max(0, Math.round(remainingCals / 4));
 
-        const fatCals = Math.round(targetCalories * clamp(fatPercent, 0.15, 0.40));
-        const fatG = Math.round(fatCals / 9);
-
-        const remainingCals = targetCalories - (proteinCals + fatCals);
-        const carbsG = Math.max(0, Math.round(remainingCals / 4));
-
-        return {
-            bmi: Number(bmi.toFixed(1)),
-            bmr: Math.round(bmr),
-            maintenanceCalories: Math.round(maintenanceCalories),
-            targetCalories,
-            proteinG,
-            fatG,
-            carbsG
-        };
+                return {
+                    bmi: Number(bmi.toFixed(1)),
+                    bmr: Math.round(bmr),
+                    maintenanceCalories: Math.round(maintenanceCalories),
+                    targetCalories,
+                    proteinG,
+                    fatG,
+                    carbsG
+                };
     }, [sex, age, heightCm, weightKg, activity, goal, kcalAdjust, proteinPerKg, fatPercent]);
 
 
@@ -88,78 +114,82 @@ function Questions() {
         e.preventDefault();
         setCurrentStep((prev) => prev + 1);
         if (currentStep >= 3) {
-            setUserData(result);
-            console.log(result);
+            const payload = {
+                ...result,
+                goal,
+                activity,
+                sex,
+                age,
+                heightCm,
+                weightKg,
+                cuisine: preferredCuisine
+            };
+            setUserData(payload);
+            console.log(payload);
 
         } else {
 
 
         }
     }
-    return (<form className="text-center items-center content-center  border-[0.1px] p-10 rounded-lg shadow-lg w-1/2 ">
+    return (
+    <form className="glass-card p-6 md:p-8 space-y-5 w-full">
+        <div className="flex items-start justify-between gap-3">
+            <div className="space-y-2 text-left">
+                <p className="pill">Fuel your week</p>
+                <h2 className="text-2xl md:text-3xl font-bold gradient-text">Dial in your targets</h2>
+                <p className="text-slate-300 max-w-xl">Answer a few quick questions so we can craft meals that match your energy needs and your favorite cuisine.</p>
+            </div>
+            <div className="hidden md:block text-sm text-slate-400">
+                Step {currentStep} of 3
+            </div>
+        </div>
+
+        <div className="stepper">
+            {[1,2,3].map((step) => (
+                <div key={step} className={`step ${currentStep === step ? "active" : ""}`}>
+                    {step}
+                </div>
+            ))}
+        </div>
 
         {currentStep === 1 && (
-            <>
-                <h2 className="text-xl capitalize">We need some informations about you!</h2>
-                <div className="flex justify-around gap-5 mt-8 ">
-
-                    <label htmlFor="">Sex</label>
-
-                    <select className="outline w-full" id="sex" value={sex} onChange={(e) => setSex(e.target.value)}>
+            <div className="grid gap-4">
+                <div className="field">
+                    <label htmlFor="sex">Sex</label>
+                    <select className="input" id="sex" value={sex} onChange={(e) => setSex(e.target.value)}>
                         <option value="male">Male</option>
                         <option value="female">Female</option>
                     </select>
                 </div>
 
-                <div className="flex justify-around gap-4 mt-3 ">
-
-                    <label htmlFor="">Age</label>
-
-                    <input className="outline w-full pl-1" type="number" name="" id="" value={age} onChange={(e) => setAge(Number(e.target.value))} />
+                <div className="field">
+                    <label htmlFor="age">Age</label>
+                    <input className="input" id="age" type="number" value={age} onChange={(e) => setAge(Number(e.target.value))} />
                 </div>
-
-                <div className="flex ">
-                    <button className="bg-gradient-to-r from-[#005461] to-[#00B7B5] text-white px-8 py-2 border-[#03c6e4] border-1 rounded-md mt-4 me-0 self-end mx-auto " onClick={handleNext}>Next</button>
-
-                </div>
-            </>
+            </div>
         )}
 
         {currentStep === 2 && (
-            <>
-                <h2 className="text-xl capitalize">Do not be Shiy Tell us !</h2>
-                <div className="flex justify-around gap-3 mt-3 ">
-
-                    <label htmlFor="">Weight (kg)</label>
-
-                    <input className="outline w-[81%] pl-1" type="number" name="" id="" value={weightKg} onChange={(e) => setWeightKg(Number(e.target.value))} />
+            <div className="grid md:grid-cols-2 gap-4">
+                <div className="field">
+                    <label htmlFor="weight">Weight (kg)</label>
+                    <input className="input" id="weight" type="number" value={weightKg} onChange={(e) => setWeightKg(Number(e.target.value))} />
                 </div>
 
-                <div className="flex justify-around gap-3 mt-3 ">
-
-                    <label htmlFor="">Height (cm)</label>
-
-                    <input className="outline w-[81%] pl-1" type="number" name="" id="" value={heightCm} onChange={(e) => setHeightCm(Number(e.target.value))} />
+                <div className="field">
+                    <label htmlFor="height">Height (cm)</label>
+                    <input className="input" id="height" type="number" value={heightCm} onChange={(e) => setHeightCm(Number(e.target.value))} />
                 </div>
-
-                <div className="flex ">
-                    <button className="bg-gradient-to-r from-[#005461] to-[#00B7B5] text-white px-8 py-2 border-[#03c6e4] border-1 rounded-md mt-4 me-0 self-end mx-auto " onClick={handleNext}>Next</button>
-
-                </div>
-            </>
+            </div>
 
         )}
 
         {currentStep === 3 && (
-
-            <>
-                <h2 className="text-xl capitalize">There we go!</h2>
-
-                <div className="flex justify-around gap-5 mt-8 ">
-
-                    <label htmlFor="">Goal</label>
-
-                    <select className="outline w-full" id="goal" value={goal} onChange={(e) => setGoal(e.target.value)}>
+            <div className="grid md:grid-cols-2 gap-4">
+                <div className="field">
+                    <label htmlFor="goal">Goal</label>
+                    <select className="input" id="goal" value={goal} onChange={(e) => setGoal(e.target.value)}>
                         <option value="lose">Lose Weight</option>
                         <option value="gain">Gain Weight</option>
                         <option value="maintain">Maintain Weight</option>
@@ -167,12 +197,31 @@ function Questions() {
                     </select>
                 </div>
 
-                <div className="flex ">
-                    <button className="bg-gradient-to-r from-[#005461] to-[#00B7B5] text-white px-8 py-2 border-[#03c6e4] border-1 rounded-md mt-4 me-0 self-end mx-auto " onClick={handleNext}>Next</button>
+                <div className="field">
+                    <label htmlFor="preferredCuisine">Preferred Cuisine</label>
 
+                    <select
+                        className="input"
+                        id="preferredCuisine"
+                        value={preferredCuisine}
+                        onChange={(e) => setPreferredCuisine(e.target.value)}
+                    >
+                        {CUISINES.map((cuisine) => (
+                            <option key={cuisine} value={cuisine}>
+                                {cuisine}
+                            </option>
+                        ))}
+                    </select>
                 </div>
-            </>
+            </div>
         )}
+
+        <div className="flex items-center justify-between">
+            <span className="text-sm text-slate-400">We calculate macros with the Mifflin-St Jeor formula + your activity level.</span>
+            <button className="primary-btn" onClick={handleNext}>
+                {currentStep < 3 ? "Next" : "See my plan"}
+            </button>
+        </div>
     </form>
     );
 }
